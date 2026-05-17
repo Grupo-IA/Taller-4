@@ -365,6 +365,63 @@ Los siguientes puntos deben ser completados por el equipo del taller:
 
 ---
 
+## ⚠️ Correcciones y Notas del Profesor (16 may 2026)
+
+> Publicado por **Daniel Alejandro González Rueda** — 16 de mayo de 2026
+
+### 1. Corrección: `layouts/simple/narrowRescue.lay`
+
+El archivo original tenía filas con distinto número de caracteres, causando un `IndexError` al recorrerlas. El archivo corregido (incluido en este repositorio) normaliza el ancho a **10 caracteres** en todas las filas:
+
+**Versión corregida:**
+
+```
+%%%%%%%%%%
+%R       %
+%  %%%%%  
+%  %   %  
+%  % T %  
+%  %   %  
+%  %M  %  
+%  %S  %  
+%  %%%%%  
+%        %
+%%%%%%%%%%
+```
+
+**Cómo aplicar la corrección:** reemplaza el contenido de `layouts/simple/narrowRescue.lay` con el bloque de arriba (o copia el archivo corregido entregado junto a este README).
+
+---
+
+### 2. Nota sobre `backwardSearch` y el costo computacional
+
+`backwardSearch` es **muy costoso computacionalmente**. Solo produce resultados en tiempo razonable en layouts muy pequeños como `tinyBase`. Los demás layouts del repositorio son demasiado grandes para este algoritmo.
+
+**Recomendación del profesor:**
+
+- Crea tus propios layouts pequeños en `layouts/simple/` (o en una carpeta nueva) para validar que `backwardSearch` es correcto y para experimentar con su eficiencia.
+- **No es obligatorio usar únicamente los layouts provistos.** Los layouts del repositorio están pensados para explorar el efecto de las heurísticas, no para evaluar el desempeño de la búsqueda regresiva.
+- La calificación se basa en la **corrección del algoritmo**, no en su desempeño sobre layouts grandes.
+
+**Ejemplo de layout mínimo propio para experimentar:**
+
+```
+%%%%%%%
+%R    %
+%  T  %
+%  M  %
+%  S  %
+%%%%%%%
+```
+
+Guárdalo como, por ejemplo, `layouts/simple/myTiny.lay` y ejecútalo con:
+
+```bash
+python main.py -p SimpleRescueProblem -f backwardSearch -l myTiny -q
+```
+
+---
+
 ## Créditos y Autores
 
 ```
@@ -376,9 +433,9 @@ Los siguientes puntos deben ser completados por el equipo del taller:
 ║                                                          ║
 ║  Nombre completo         Código de estudiante            ║
 ║  ─────────────────────   ────────────────────            ║
-║  [ Integrante 1 ]        [ Código 1 ]                    ║
-║  [ Integrante 2 ]        [ Código 2 ]                    ║
-║  [ Integrante 3 ]        [ Código 3 ]                    ║
+║  Karen Fuentes           202122467                       ║
+║  Sofia Sarasty           202511871                       ║
+║  Juan Pablo Camacho Peña 202110977                       ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
 ```
