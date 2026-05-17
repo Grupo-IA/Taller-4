@@ -164,7 +164,14 @@ def regress(goal_set: State, action: Action) -> State | None:
          Check relevance first, then check for contradictions, then compute.
     """
     ### Your code here ###
-
+    # la accion tiene add_list que contribuye al goal
+    if not (action.add_list & goal_set):
+        return None
+    # no se puede eliminar algo que ya debe ser verdad en el goal
+    if action.del_list & goal_set:
+        return None
+    # REGRESS(g, a) = (g - ADD(a)) ∪ PRECOND_pos(a)
+    return (goal_set - action.add_list) | action.precond_pos
     ### End of your code ###
 
 
@@ -187,7 +194,80 @@ def backwardSearch(problem: Problem) -> list[Action]:
          Pickable) that are false in the initial state — these are dead ends.
     """
     ### Your code here ###
+    # si no estan en el estado inicial -> dead end
+    # si si estan -> siempre van a ser true no hay queguardarlos en el goal
+    _STATIC = {"MedicalPost", "Adjacent", "Pickable"}
 
+    all_actions = get_all_groundings(problem.domain, problem.objects)
+
+    # quita del goal los fluentes que son estaticos y ya estan satisfechos
+    # en el estado inicial (siempre van a ser true, no aportan info util)
+    def simplify(goal):
+        return frozenset(
+            f for f in goal
+            if not (f[0] in _STATIC and f in problem.initial_state)
+        )
+
+    # mirar consistencia
+    def is_consistent(goal):
+        positions = {}  # entidad -> celda
+        for f in goal:
+            if f[0] == "At":
+                entity, cell = f[1], f[2]
+                if entity in positions and positions[entity] != cell:
+                    return False  # mismo objeto en dos lugares
+                positions[entity] = cell
+        # HandsFree y Holding al mismo tiempo es contradiccion
+        holders = {f[1] for f in goal if f[0] == "Holding"}
+        free = {f[1] for f in goal if f[0] == "HandsFree"}
+        if holders & free:
+            return False
+        return True
+
+    # caso: el goal ya esta satisfecho desde el inicio
+    if problem.goal.issubset(problem.initial_state):
+        return []
+
+    start_goal = simplify(problem.goal)
+
+    # cada nodo del BFS es (goal_parcial, plan_hasta_aqui_en_orden_forward)
+    frontier = Queue()
+    frontier.push((start_goal, []))
+    visited = {start_goal}
+
+    while not frontier.isEmpty():
+        current_goal, plan_so_far = frontier.pop()
+        problem._expanded += 1
+
+        for action in all_actions:
+            new_goal = regress(current_goal, action)
+            if new_goal is None:
+                continue
+
+            # si el nuevo goal pide un fluente estatico que no esta en el
+            # estado inicial, es loop
+            if any(f[0] in _STATIC and f not in problem.initial_state for f in new_goal):
+                continue
+
+            # simplificar antes de guardar para reducir el espacio de busqueda
+            new_goal = simplify(new_goal)
+
+            # descartamos goals que son imposibles
+            if not is_consistent(new_goal):
+                continue
+
+            # la accion regresada va al frente porque en forward se ejecuta primero
+            new_plan = [action] + plan_so_far
+
+            # si el estado inicial satisface el nuevo goal, tenemos el plan
+            if new_goal.issubset(problem.initial_state):
+                return new_plan
+
+            if new_goal not in visited:
+                visited.add(new_goal)
+                frontier.push((new_goal, new_plan))
+
+    return []
     ### End of your code ###
 
 
