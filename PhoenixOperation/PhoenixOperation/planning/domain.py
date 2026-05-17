@@ -49,9 +49,25 @@ MOVE: ActionSchema = ActionSchema(
 # After pickup: the object is no longer At loc, and the robot is no longer HandsFree.
 # ---------------------------------------------------------------------------
 
-### Your code here ###
-PICKUP: ActionSchema = None
-### End of your code ###
+PICKUP: ActionSchema = ActionSchema(
+    name="PickUp",
+    parameters=["r", "obj", "loc"],
+    precond_pos=[
+        ("At", "r", "loc"),       # el robot está en la misma celda
+        ("At", "obj", "loc"),     # el objeto está en esa celda
+        ("HandsFree", "r"),       # las manos del robot están libres
+        ("Pickable", "obj"),      # el objeto puede ser recogido
+    ],
+    precond_neg=[],
+    add_list=[
+        ("Holding", "r", "obj"),  # ahora el robot lo sostiene
+    ],
+    del_list=[
+        ("At", "obj", "loc"),     # el objeto desaparece del suelo
+        ("HandsFree", "r"),       # el robot ya no tiene manos libres
+    ],
+    
+)
 
 
 # ---------------------------------------------------------------------------
@@ -60,9 +76,22 @@ PICKUP: ActionSchema = None
 # After putdown: the object is At loc, and the robot is HandsFree again.
 # ---------------------------------------------------------------------------
 
-### Your code here ###
-PUTDOWN: ActionSchema = None
-### End of your code ###
+PUTDOWN: ActionSchema = ActionSchema(
+    name="PutDown",
+    parameters=["r", "obj", "loc"],
+    precond_pos=[
+        ("At", "r", "loc"),        # el robot está en esa celda
+        ("Holding", "r", "obj"),   # el robot sostiene el objeto
+    ],
+    precond_neg=[],
+    add_list=[
+        ("At", "obj", "loc"),      # el objeto aparece en el suelo
+        ("HandsFree", "r"),        # el robot queda con manos libres
+    ],
+    del_list=[
+        ("Holding", "r", "obj"),   # el robot deja de sostenerlo
+    ],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -71,9 +100,23 @@ PUTDOWN: ActionSchema = None
 # After rescue: patient is marked as Rescued and no longer At loc.
 # ---------------------------------------------------------------------------
 
-### Your code here ###
-RESCUE: ActionSchema = None
-### End of your code ###
+RESCUE: ActionSchema = ActionSchema(
+    name="Rescue",
+    parameters=["r", "p", "loc"],
+    precond_pos=[
+        ("At", "r", "loc"),          # el robot está en el puesto médico
+        ("At", "p", "loc"),          # el paciente está ahí también
+        ("MedicalPost", "loc"),      # loc es un puesto médico
+        ("SuppliesReady", "loc"),    # los suministros están listos
+    ],
+    precond_neg=[],
+    add_list=[
+        ("Rescued", "p"),            # el paciente queda rescatado ✓
+    ],
+    del_list=[
+        ("At", "p", "loc"),          # el paciente ya no ocupa la celda
+    ],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -84,9 +127,25 @@ RESCUE: ActionSchema = None
 # the fluent At(s, loc) was removed when the robot picked it up.
 # ---------------------------------------------------------------------------
 
-### Your code here ###
-SETUP_SUPPLIES: ActionSchema = None
-### End of your code ###
+SETUP_SUPPLIES: ActionSchema = ActionSchema(
+    name="SetupSupplies",
+    parameters=["r", "s", "loc"],
+    precond_pos=[
+        ("At", "r", "loc"),          # el robot está en el puesto médico
+        ("MedicalPost", "loc"),      # loc es efectivamente un puesto médico
+        ("Holding", "r", "s"),       # el robot lleva los suministros encima
+    ],
+    precond_neg=[
+        ("SuppliesReady", "loc"),    # los suministros NO deben estar ya instalados
+    ],
+    add_list=[
+        ("SuppliesReady", "loc"),    # el puesto queda equipado con suministros
+        ("HandsFree", "r"),          # el robot tiene manos libres de nuevo
+    ],
+    del_list=[
+        ("Holding", "r", "s"),       # el robot ya no carga los suministros
+    ],
+)
 
 
 DOMAIN: list[ActionSchema] = [MOVE, PICKUP, PUTDOWN, RESCUE, SETUP_SUPPLIES]
