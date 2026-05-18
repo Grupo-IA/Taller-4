@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from planning.pddl import Action, Problem, apply_action, is_applicable
+from planning.pddl import Action, Problem, apply_action, get_all_groundings, is_applicable
+from planning.utils import Queue, PriorityQueue
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +64,36 @@ def hierarchicalSearch(problem: Problem, hlas: list[HLA]) -> list[Action]:
          To simulate execution, apply each action in order using apply_action().
     """
     ### Your code here ###
-
+    if not hlas:
+        return []
+    
+    initial_plan= [hlas[0]]
+    queue= Queue()
+    queue.push(initial_plan)
+    
+    while queue:
+        current_plan= queue.pop()
+        if is_plan_primitive(current_plan):
+            state= problem.get_initial_state()
+            for action in current_plan:
+                state= apply_action(state, action)
+            if problem.is_goal(state):
+                return current_plan
+            continue
+        
+        cent= False
+        i= 0
+        while cent == False and i < len(current_plan):
+            action= current_plan[i]
+            if not is_primitive(action):
+                hla= action
+                for refinement_sequence in hla.refinements(problem):
+                    new_plan= current_plan[:i] + refinement_sequence + current_plan[i+1:]
+                    queue.push(new_plan)
+                cent= True
+            i+= 1
+            
+    return []
     ### End of your code ###
 
 
@@ -89,5 +119,90 @@ def build_htn_hierarchy(problem: Problem) -> list[HLA]:
          with primitive PickUp, SetupSupplies, PutDown, and Rescue actions.
     """
     ### Your code here ###
-
+    domain = problem.domain
+    objects = problem.objects
+    
+    robots = objects.get("robots", [])
+    cells = objects.get("cells", [])
+    supplies = objects.get("supplies", [])
+    patients = objects.get("patients", [])
+    medical_posts = objects.get("medical_posts", [])
+    
+    hla_list = []
+    all_grounded = get_all_groundings(domain, objects)
+    
+    for r in robots:
+        for from_cell in cells:
+            for to_cell in cells:
+                if from_cell != to_cell:
+                    navigate_hla = HLA(f"Navigate({from_cell}, {to_cell})")
+                    target_move_name = f"Move({r}, {from_cell}, {to_cell})"
+                    move_action = next((a for a in all_grounded if a.name == target_move_name), None)
+                    
+                    if move_action:
+                        navigate_hla.refinements.append([move_action])
+                        hla_list.append(navigate_hla)
+    
+    for s in supplies:
+        for m in medical_posts:
+            prepare_hla = HLA(f"PrepareSupplies({s}, {m})")
+            for r in robots:
+                for from_cell in cells:
+                    for cell in cells:
+                        pick_up = next((a for a in all_grounded if a.name.startswith(f"PickUp({r}, {s}")), None)
+                        setup = next((a for a in all_grounded if a.name.startswith(f"SetupSupplies({r}, {s}")), None)
+                        
+                        if pick_up and setup:
+                            nav_to_supply = next((h for h in hla_list if h.name == f"Navigate({from_cell}, {cell})"), None)
+                            nav_to_post = next((h for h in hla_list if h.name == f"Navigate({cell}, {m})"), None)
+                            
+                            secuencia = []
+                            if nav_to_supply: 
+                                secuencia.append(nav_to_supply)
+                            secuencia.append(pick_up)
+                            if nav_to_post: 
+                                secuencia.append(nav_to_post)
+                            secuencia.append(setup)
+                            
+                            prepare_hla.refinements.append(secuencia)
+            hla_list.append(prepare_hla)
+    
+    for p in patients:
+        for m in medical_posts:
+            extract_hla = HLA(f"ExtractPatient({p}, {m})")
+            for r in robots:
+                for from_cell in cells:
+                    for cell in cells:
+                        pick_up = next((a for a in all_grounded if a.name.startswith(f"PickUp({r}, {p}")), None)
+                        put_down = next((a for a in all_grounded if a.name.startswith(f"PutDown({r}, {p}")), None)
+                        
+                        if pick_up and put_down:
+                            nav_to_patient = next((h for h in hla_list if h.name == f"Navigate({from_cell}, {cell})"), None)
+                            nav_to_post = next((h for h in hla_list if h.name == f"Navigate({cell}, {m})"), None)
+                            
+                            secuencia = []
+                            if nav_to_patient: 
+                                secuencia.append(nav_to_patient)
+                            secuencia.append(pick_up)
+                            if nav_to_post: 
+                                secuencia.append(nav_to_post)
+                            secuencia.append(put_down)
+                            
+                            extract_hla.refinements.append(secuencia)
+            hla_list.append(extract_hla)
+            
+    for s in supplies:
+        for p in patients:
+            for m in medical_posts:
+                full_rescue_hla = HLA(f"FullRescueMission({s}, {p}, {m})")
+                
+                prepare_hla = next((h for h in hla_list if h.name == f"PrepareSupplies({s}, {m})"), None)
+                extract_hla = next((h for h in hla_list if h.name == f"ExtractPatient({p}, {m})"), None)
+                rescue_action = next((a for a in all_grounded if a.name.startswith("Rescue")), None)
+                
+                if prepare_hla and extract_hla and rescue_action:
+                    full_rescue_hla.refinements.append([prepare_hla, extract_hla, rescue_action])
+                    hla_list.append(full_rescue_hla)
+                
+    return hla_list
     ### End of your code ###
