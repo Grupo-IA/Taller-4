@@ -8,7 +8,9 @@ from planning.pddl import (
     Problem,
     State,
     Objects,
+    apply_action,
     get_all_groundings,
+    get_applicable_actions,
 )
 from planning.utils import Queue, PriorityQueue
 from planning.heuristics import nullHeuristic
@@ -326,33 +328,33 @@ def aStarPlanner(
     """
     ### Your code here ###
     
-    pq= PriorityQueue()
-    initial_state= problem.get_initial_state()
-    goal= problem.goal
-    domain= problem.domain
-    objects= problem.objects
-    h_start= heuristic(initial_state, goal, domain, objects)
-    f_start= 0.0 + h_start
-    pq.push((f_start, (initial_state, [], 0.0)))
-    g_costs= {}
-    g_costs[initial_state]= 0.0
+    pq = PriorityQueue()
+    initial_state = problem.initial_state
+    goal = problem.goal
+    domain = problem.domain
+    objects = problem.objects
+    h_start = heuristic(initial_state, goal, domain, objects)
+    f_start = 0.0 + h_start
+    pq.push((initial_state, [], 0.0), f_start)
+    g_costs = {}
+    g_costs[initial_state] = 0.0
 
     while not pq.isEmpty():
-        f_cost, (current_state, current_path, current_g) = pq.pop()
+        current_state, current_path, current_g = pq.pop()
         if current_g > g_costs.get(current_state, float('inf')):
             continue
-        elif problem.is_goal(current_state):
+        if problem.isGoalState(current_state):
             return current_path
         
-        for action in problem.get_applicable_actions(current_state):
-            next_state= problem.apply_action(current_state, action)
-            new_g= current_g + 1.0
+        for next_state, action, cost in problem.getSuccessors(current_state):
+            new_g = current_g + cost  # Usar el costo real de la acción
             if next_state not in g_costs or new_g < g_costs[next_state]:
-                g_costs[next_state]= new_g
-                h_next= heuristic(next_state, goal, domain, objects)
-                new_f= new_g + h_next
-                new_path= current_path + [action]
-                pq.push((new_f, (next_state, new_path, new_g)))
+                g_costs[next_state] = new_g
+                h_next = heuristic(next_state, goal, domain, objects)
+                new_f = new_g + h_next
+                new_path = current_path + [action]
+                pq.push((next_state, new_path, new_g), new_f)
+                
     return []
     ### End of your code ###
 

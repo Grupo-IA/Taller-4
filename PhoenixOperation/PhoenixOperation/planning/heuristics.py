@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from planning.pddl import ActionSchema, State, Objects, get_applicable_actions
+from planning.pddl import ActionSchema, State, Objects, get_applicable_actions, get_all_groundings
 
 
 def nullHeuristic(
@@ -51,11 +51,7 @@ def ignorePreconditionsHeuristic(
     if not unsatisfied:
         return 0.0
     
-    grounded_actions= []
-    for schema in domain:
-        for action in schema.ground(objects):
-            grounded_actions.append(action)
-    
+    grounded_actions= get_all_groundings(domain, objects)
     actions_count= 0
     while unsatisfied:
         best_action= None
