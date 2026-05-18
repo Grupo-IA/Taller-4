@@ -137,10 +137,39 @@ def forwardBFS(problem: Problem) -> list[Action]:
          to get (next_state, action, cost) triples. Track visited states to
          avoid revisiting the same state twice (graph search, not tree search).
     """
-    ### Your code here ###
+    start_state = problem.getStartState()
 
-    ### End of your code ###
+    if problem.isGoalState(start_state):
+        return []
 
+    frontier = Queue()
+    frontier.push(start_state)
+
+    came_from = {start_state: (None, None)}
+
+    while not frontier.isEmpty():
+        current = frontier.pop()
+
+        for next_state, action, _ in problem.getSuccessors(current):
+
+            if next_state in came_from:
+                continue
+
+            came_from[next_state] = (current, action)
+
+            if problem.isGoalState(next_state):
+                plan = []
+                state = next_state
+                while came_from[state][0] is not None:
+                    parent, act = came_from[state]
+                    plan.append(act)
+                    state = parent
+                plan.reverse()
+                return plan
+
+            frontier.push(next_state)
+
+    return []
 
 # ---------------------------------------------------------------------------
 # Punto 3 – Backward Planning
