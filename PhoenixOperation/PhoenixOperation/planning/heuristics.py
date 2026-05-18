@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from planning.pddl import ActionSchema, State, Objects
+from planning.pddl import ActionSchema, State, Objects, get_applicable_actions
 
 
 def nullHeuristic(
@@ -45,7 +45,33 @@ def ignorePreconditionsHeuristic(
          Remember: with no preconditions, every grounding is "applicable".
     """
     ### Your code here ###
-
+    
+    unsatisfied= goal - state
+    
+    if not unsatisfied:
+        return 0.0
+    
+    grounded_actions= []
+    for schema in domain:
+        for action in schema.ground(objects):
+            grounded_actions.append(action)
+    
+    actions_count= 0
+    while unsatisfied:
+        best_action= None
+        max_covered= 0
+        for action in grounded_actions:
+            covered= action.add_list & unsatisfied
+            num_covered= len(covered)
+            if num_covered > max_covered:
+                max_covered= num_covered
+                best_action= action
+        if max_covered == 0:
+            return float('inf')
+        unsatisfied= unsatisfied - best_action.add_list
+        actions_count+= 1
+        
+    return float(actions_count)
     ### End of your code ###
 
 
@@ -79,5 +105,28 @@ def ignoreDeleteListsHeuristic(
          each step (preconditions still apply in the relaxed model).
     """
     ### Your code here ###
+
+    unsatisfied= goal - state
+    if not unsatisfied:
+        return 0.0
+    relaxed_state= state
+    actions_count= 0
+    while unsatisfied:
+        aplicable_actions= get_applicable_actions(relaxed_state, domain, objects)
+        best_action= None
+        max_covered= 0
+        for action in aplicable_actions:
+            covered= action.add_list & unsatisfied
+            num_covered= len(covered)
+            if num_covered > max_covered:
+                max_covered= num_covered
+                best_action= action
+        if max_covered == 0:
+            return float('inf')
+        relaxed_state= relaxed_state | best_action.add_list
+        unsatisfied= unsatisfied - best_action.add_list
+        actions_count+= 1
+    
+    return float(actions_count)
 
     ### End of your code ###
