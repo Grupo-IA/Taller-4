@@ -71,13 +71,15 @@ def hierarchicalSearch(problem: Problem, hlas: list[HLA]) -> list[Action]:
     queue= Queue()
     queue.push(initial_plan)
     
-    while queue:
+    while queue.isEmpty() == False:
         current_plan= queue.pop()
+        if all(not hasattr(task, 'refinements') for task in current_plan):
+            state = problem.getStartState()
         if is_plan_primitive(current_plan):
-            state= problem.get_initial_state()
+            state= problem.initial_state
             for action in current_plan:
                 state= apply_action(state, action)
-            if problem.is_goal(state):
+            if problem.goal == state:
                 return current_plan
             continue
         
@@ -87,7 +89,7 @@ def hierarchicalSearch(problem: Problem, hlas: list[HLA]) -> list[Action]:
             action= current_plan[i]
             if not is_primitive(action):
                 hla= action
-                for refinement_sequence in hla.refinements(problem):
+                for refinement_sequence in hla.refinements:
                     new_plan= current_plan[:i] + refinement_sequence + current_plan[i+1:]
                     queue.push(new_plan)
                 cent= True

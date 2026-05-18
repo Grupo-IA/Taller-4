@@ -118,10 +118,13 @@ def ignoreDeleteListsHeuristic(
                 max_covered= num_covered
                 best_action= action
         if max_covered == 0:
-            return float('inf')
+            if unsatisfied:
+                return float('inf')
+            break
+            
         relaxed_state= relaxed_state | best_action.add_list
         unsatisfied= unsatisfied - best_action.add_list
-        actions_count+= 1
+        actions_count += 1
     
     return float(actions_count)
 

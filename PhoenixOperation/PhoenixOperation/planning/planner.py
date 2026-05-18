@@ -329,15 +329,15 @@ def aStarPlanner(
     ### Your code here ###
     
     pq = PriorityQueue()
-    initial_state = problem.initial_state
-    goal = problem.goal
-    domain = problem.domain
-    objects = problem.objects
-    h_start = heuristic(initial_state, goal, domain, objects)
-    f_start = 0.0 + h_start
+    initial_state= problem.initial_state
+    goal= problem.goal
+    domain= problem.domain
+    objects= problem.objects
+    h_start= heuristic(initial_state, goal, domain, objects)
+    f_start= 0.0 + h_start
     pq.push((initial_state, [], 0.0), f_start)
-    g_costs = {}
-    g_costs[initial_state] = 0.0
+    g_costs= {}
+    g_costs[initial_state]= 0.0
 
     while not pq.isEmpty():
         current_state, current_path, current_g = pq.pop()
@@ -347,12 +347,12 @@ def aStarPlanner(
             return current_path
         
         for next_state, action, cost in problem.getSuccessors(current_state):
-            new_g = current_g + cost  # Usar el costo real de la acción
+            new_g= current_g + cost
             if next_state not in g_costs or new_g < g_costs[next_state]:
-                g_costs[next_state] = new_g
-                h_next = heuristic(next_state, goal, domain, objects)
-                new_f = new_g + h_next
-                new_path = current_path + [action]
+                g_costs[next_state]= new_g
+                h_next= heuristic(next_state, goal, domain, objects)
+                new_f= new_g + h_next
+                new_path= current_path + [action]
                 pq.push((next_state, new_path, new_g), new_f)
                 
     return []
